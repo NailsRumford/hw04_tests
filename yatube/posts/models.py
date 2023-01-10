@@ -9,13 +9,14 @@ class Group(models.Model):
     """Модель группы сообщества"""
     title = models.CharField(max_length=200,
                              verbose_name='Название группы',
-                             help_text= 'Введите название группы'
+                             help_text='Введите название группы'
                              )
     slug = models.SlugField(unique=True,
                             null=True,
                             verbose_name='Адресс для страницы группы',
-                            help_text=('Введенный вами текст будет автоматически '
-                                       'переведен в транслит и обрезан до 100 символов.')
+                            help_text=('Введенный вами текст будет'
+                                       ' автоматически переведен в'
+                                       ' транслит и обрезан до 100 символов.')
                             )
     description = models.TextField(verbose_name='Описание группы',
                                    help_text='Введите описание группы')
@@ -26,19 +27,19 @@ class Group(models.Model):
 
     def __str__(self) -> str:
         return f'{self.title}'
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)[:100]
         else:
             self.slug = slugify(self.slug)[:100]
-        super().save(*args, **kwargs) 
+        super().save(*args, **kwargs)
 
-    
+
 class Post(models.Model):
     """Модель поста"""
     text = models.TextField(verbose_name='Текст поста',
-                            help_text= 'Введите текст поста')
+                            help_text='Введите текст поста')
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации')
     author = models.ForeignKey(
@@ -53,7 +54,7 @@ class Post(models.Model):
         null=True,
         on_delete=models.SET_NULL,
         related_name='posts',
-        verbose_name= 'Группа',
+        verbose_name='Группа',
         help_text='Группа, к которой будет отнаситься пост'
     )
 
