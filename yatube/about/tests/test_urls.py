@@ -16,9 +16,9 @@ class TestUrlAbout (TestCase):
 
     def test_url_uses_correct_template(self):
         """Проверка шаблона для адреса"""
-        templates_url_name = {'about/author.html': '/author/',
-                              'about/author.html': '/tech/'}
-        for template, address in templates_url_name.items():
+        templates_url_name = {'/author/': 'about/author.html',
+                              '/tech/': 'about/author.html'}
+        for address, template in templates_url_name.items():
             with self.subTest(address=address):
                 response = TestUrlAbout.guest_client.get(address)
                 self.assertTemplateUsed(response, template)
