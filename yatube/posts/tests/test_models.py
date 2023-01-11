@@ -8,6 +8,7 @@ User = get_user_model()
 class GroupModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls.FIELDS = [
             {'field': 'title', 'verbose_name': 'Название группы',
                 'help_text': 'Введите название группы'},
@@ -26,26 +27,28 @@ class GroupModelTest(TestCase):
             password='testpassword'
         )
         self.group = Group.objects.create(
-            title='Test Group',
-            description='This is a test group',
-            author=self.user
+            title='Тестовая группа',
+            description='Это тестовая группа',
         )
 
     def test_group_str(self):
         """Проверяем __str__ в Group"""
-        self.assertEqual(str(self.group), 'Test Group')
+        self.assertEqual(str(self.group), 'Тестовая группа')
 
     def test_field_verbose_name_and_help_text(self):
         """Проверяем verbose_name и help_text во всех полях"""
         for field in self.FIELDS:
-            model_field = Group._meta.get_field(field['field'])
-            self.assertEqual(model_field.verbose_name, field['verbose_name'])
-            self.assertEqual(model_field.help_text, field['help_text'])
+            with self.subTest(field=field):
+                model_field = Group._meta.get_field(field['field'])
+                self.assertEqual(model_field.verbose_name,
+                                 field['verbose_name'])
+                self.assertEqual(model_field.help_text, field['help_text'])
 
 
 class PostModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls.FIELDS = [
             {'field': 'text', 'verbose_name': 'Текст поста',
                 'help_text': 'Введите текст поста'},
@@ -62,19 +65,19 @@ class PostModelTest(TestCase):
             password='testpassword'
         )
         self.group = Group.objects.create(
-            title='Test Group',
-            description='This is a test group',
-            author=self.user
+            title='Тестовая группа',
+            description='Это тестовая группа'
+
         )
         self.post = Post.objects.create(
-            text='This is a test post',
+            text='Просто тестовый пост',
             author=self.user,
             group=self.group
         )
 
     def test_post_str(self):
         """Проверяем __str__  в Пост"""
-        self.assertEqual(str(self.post), 'This is a test')
+        self.assertEqual(str(self.post), 'Просто тестовый')
 
     def test_field_verbose_name_and_help_text(self):
         """Проверяем verbose_name и help_text во всех полях"""
