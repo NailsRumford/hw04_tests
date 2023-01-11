@@ -11,7 +11,7 @@ class TestUrlAbout (TestCase):
         url_names = ('/author/', '/tech/')
         for addres in url_names:
             with self.subTest(addres=addres):
-                respons = TestUrlAbout.guest_client.get(addres)
+                respons = self.guest_client.get(addres)
                 self.assertEqual(respons.status_code, HTTPStatus.OK)
 
     def test_url_uses_correct_template(self):
@@ -20,5 +20,5 @@ class TestUrlAbout (TestCase):
                               '/tech/': 'about/tech.html'}
         for address, template in templates_url_name.items():
             with self.subTest(address=address):
-                response = TestUrlAbout.guest_client.get(address)
+                response = self.guest_client.get(address)
                 self.assertTemplateUsed(response, template)
