@@ -2,9 +2,8 @@ from django.test import TestCase, Client
 
 
 class TestUrlAbout (TestCase):
-    def setUp(cls) -> None:
-        super().setUpClass()
-        cls.guest_client = Client()
+    def setUp(self):
+        self.guest_client = Client()
 
     def test_url_exists_at_desired_location(self):
         '''Проверка доступности адреса'''
