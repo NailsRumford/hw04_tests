@@ -9,8 +9,9 @@ class TestUrlAbout (TestCase):
         path_list = (reverse('about:author'), reverse('about:tech'))
         for path in path_list:
             with self.subTest(addres=path):
-                respons = Client.get(path)
-                self.assertEqual(respons.status_code, HTTPStatus.OK)
+                goust_client = Client()
+                response = goust_client.get(path)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_url_uses_correct_template(self):
         """Проверка шаблона для адреса"""
@@ -18,5 +19,6 @@ class TestUrlAbout (TestCase):
                               '/tech/': 'about/tech.html'}
         for path, template in path_template_name.items():
             with self.subTest(address=path):
-                response = Client(path)
+                goust_client = Client()
+                response = goust_client.get(path)
                 self.assertTemplateUsed(response, template)
