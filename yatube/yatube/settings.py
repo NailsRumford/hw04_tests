@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core.apps.CoreConfig',
     'about.apps.AboutConfig',
-    'pytils.translit'
+    'pytils'
 ]
 
 MIDDLEWARE = [
