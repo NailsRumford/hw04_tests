@@ -3,6 +3,7 @@ from django.urls import reverse
 from posts.models import Post, Group
 from django.contrib.auth import get_user_model
 from mixer.backend.django import mixer
+
 User = get_user_model()
 
 
