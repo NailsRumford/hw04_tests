@@ -1,14 +1,14 @@
 from django.test import TestCase, Client
 from http import HTTPStatus
-
+from django.urls import reverse
 
 class TestUrlAbout (TestCase):
     def test_url_exists_at_desired_location(self):
         '''Проверка доступности адреса'''
-        url_names = ('/author/', '/tech/')
-        for addres in url_names:
-            with self.subTest(addres=addres):
-                respons = Client.get(addres)
+        path_list = (reverse('about:author'), reverse('about:tech'))
+        for path in path_list:
+            with self.subTest(addres = path):
+                respons = Client.get(path)
                 self.assertEqual(respons.status_code, HTTPStatus.OK)
 
     def test_url_uses_correct_template(self):
