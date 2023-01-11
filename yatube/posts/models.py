@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from pytils.translit import slugify
 
+
 User = get_user_model()
 
 
