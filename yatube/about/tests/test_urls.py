@@ -15,8 +15,8 @@ class TestUrlAbout (TestCase):
 
     def test_url_uses_correct_template(self):
         """Проверка шаблона для адреса"""
-        path_template_name = {'/author/': 'about/author.html',
-                              '/tech/': 'about/tech.html'}
+        path_template_name = {reverse('about:author'): 'about/author.html',
+                              reverse('about:tech'): 'about/tech.html'}
         for path, template in path_template_name.items():
             with self.subTest(address=path):
                 goust_client = Client()
