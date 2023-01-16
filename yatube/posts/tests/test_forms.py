@@ -39,12 +39,16 @@ class PostFormTest (TestCase):
         }
         response = self.authorized_user.post(path, data=form_data, follow=True)
         self.assertEqual(Post.objects.count(),
-                         post_count + 1, "Пост не создался")
-        self.assertRedirects(response, expected_redirect_path)
-        self.assertEqual(Post.objects.first(
-        ).text, form_data['text'], "Текст поста не соответствует ожидаемому")
-        self.assertEqual(Post.objects.first(
-        ).group.id, form_data['group'], "Группа поста не соответствует ожидаемой")
+                         post_count + 1,
+                         "Пост не создался")
+        self.assertRedirects(response,
+                             expected_redirect_path)
+        self.assertEqual(Post.objects.first().text,
+                         form_data['text'],
+                         "Текст поста не соответствует ожидаемому")
+        self.assertEqual(Post.objects.first().group.id,
+                         form_data['group'],
+                         "Группа поста не соответствует ожидаемой")
         self.assertEqual(Post.objects.first().author, self.user,
                          "Автор поста не соответствует ожидаемому")
 
@@ -61,18 +65,20 @@ class PostFormTest (TestCase):
             'group': mixer.blend(Group).id,
         }
         response = self.authorized_user.post(path, data=form_data, follow=True)
-        edited_object = Post.objects.get(id = self.post.id) 
-        self.assertEqual(Post.objects.count(), 
+        edited_object = Post.objects.get(id=self.post.id)
+        self.assertEqual(Post.objects.count(),
                          post_count,
                          "Пост создался, а не отредактировался")
-        self.assertRedirects(response, expected_redirect_path)
-        self.assertEqual(edited_object.text, 
+        self.assertRedirects(response,
+                             expected_redirect_path)
+        self.assertEqual(edited_object.text,
                          form_data['text'],
                          "Текст поста не соответствует ожидаемому")
         self.assertEqual(edited_object.group.id,
-                         form_data['group'], 
+                         form_data['group'],
                          "Группа поста не соответствует ожидаемой")
-        self.assertEqual(edited_object.author, self.user,
+        self.assertEqual(edited_object.author,
+                         self.user,
                          "Автор поста не соответствует ожидаемому")
 
     def test_unauthorize_user_cannot_send_form(self):
@@ -88,7 +94,8 @@ class PostFormTest (TestCase):
             (reverse('posts:post_create'),
              '/auth/login/?next=' + reverse('posts:post_create')),
             (reverse('posts:post_edit', args=(self.post.id,)),
-             '/auth/login/?next=' + reverse('posts:post_edit', args=(self.post.id,)))
+             '/auth/login/?next=' + reverse('posts:post_edit',
+                                            args=(self.post.id,)))
         )
         post_count = Post.objects.count()
         for path, expected_redirect_path in path_list:
@@ -96,7 +103,8 @@ class PostFormTest (TestCase):
                 response = unauthorize_user.post(
                     path, data=form_data, follow=True)
 
-                self.assertEqual(Post.objects.count(), 
-                                 post_count, 
-                                "При отправки формы неавторизованным пользователем, число постов изменилось" )  
+                self.assertEqual(Post.objects.count(),
+                                 post_count,
+                                 "При отправки формы неавторизованным "
+                                 "пользователем, число постов изменилось")
                 self.assertRedirects(response, expected_redirect_path)
