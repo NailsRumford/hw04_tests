@@ -1,100 +1,122 @@
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
-from posts.models import Post, Group
+from django.urls import reverse
+from mixer.backend.django import mixer
 from http import HTTPStatus
+from posts.models import Post, Group
+
 
 User = get_user_model()
 
 
-class PostsURLTest(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.guest_client = Client()
-        cls.author_user = User.objects.create_user(username='auth')
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author_user)
-        cls.user = User.objects.create_user(username='testUser')
-        cls.authorized_client = Client()
-        cls.authorized_client.force_login(cls.user)
-        cls.group = Group.objects.create(
-            title='Тестовая группа',
-            slug='Тестовый слаг',
-            description='Тестовое описание',
-        )
-        cls.post = Post.objects.create(
-            author=cls.author_user,
-            text='Тестовый пост',
-            group=cls.group
-        )
+class URLsTest(TestCase):
 
-    def test_URL_for_all_users(self):
-        """
-        Проверка URL доступных для всех пользовотелей.
-        data_for_test = {address:address_template}
-        """
-        data_for_test = {'/': 'posts/index.html',
-                         f'/group/{PostsURLTest.group.slug}/':
-                             'posts/group_list.html',
-                         f'/profile/{PostsURLTest.user}/':
-                             'posts/profile.html'}
+    def setUp(self):
+        self.user = mixer.blend(User)
+        self.group = mixer.blend(Group)
+        self.post = mixer.blend(Post, author=self.user, group=self.group)
+        self.goust_user = Client()
+        self.authorized_user =Client()
+        self.authorized_user.force_login(self.user)
 
-        for address, template in data_for_test.items():
-            with self.subTest(test_address=address):
-                response = PostsURLTest.guest_client.get(address)
+    def test_public_urls(self):
+        """
+        Публичные urls 
+        (главная, профиль, группа, одиночный пост)
+        работают для неавторизованного пользователя
+        """
+        path_list = (reverse('posts:index'),
+                     reverse('posts:group_list', args=(self.group.slug,)),
+                     reverse('posts:profile', args=(self.user.username,)),
+                     reverse('posts:post_detail', args=(self.post.id,))
+                     )
+
+        for path in path_list:
+            with self.subTest(path=path):
+                response = self.goust_user.get(path)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_private_urls(self):
+        """
+        Приватные urls
+        (создание-редактирование)
+        работают для автаризованного пользователя
+        """
+        path_list = (reverse('posts:post_create'),
+                     reverse('posts:post_edit', args=(self.post.id,)))
+
+        for path in path_list:
+            with self.subTest(url=path):
+                response = self.authorized_user.get(path)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_guest_access(self):
+        """
+        Гость не может получить доступк приватным урлам,
+        """
+        path_list = (
+            (reverse('posts:post_create'),
+             '/auth/login/?next=' + reverse('posts:post_create')),
+            (reverse('posts:post_edit', args=(self.post.id,)),
+             '/auth/login/?next=' + reverse('posts:post_edit',
+                                            args=(self.post.id,)))
+        )
+
+        for path, expected_redirect_path in path_list:
+            with self.subTest(address=path):
+                response = self.goust_user.get(path)
+                self.assertRedirects(response, expected_redirect_path)
+
+    def test_non_author_edit(self):
+        """
+        Не автор поста не может редактировать его
+        """
+        non_author_user = Client()
+        non_author_user.force_login(user=mixer.blend(User))
+        path = reverse('posts:post_edit', args=(self.post.id,))
+        response = non_author_user.get(path)
+        expected_redirect_path = reverse(
+            'posts:post_detail', args=(self.post.id,))
+        self.assertRedirects(response, expected_redirect_path)
+
+    def test_templates(self):
+        """
+        Используются коректные шаблоны
+        """
+        expected_template = [
+            (reverse('posts:index'),
+             'posts/index.html'),
+            (reverse('posts:group_list',
+                     args=(self.group.slug,)),
+             'posts/group_list.html'),
+            (reverse('posts:profile',
+                     args=(self.user.username,)),
+             'posts/profile.html'),
+            (reverse('posts:post_detail',
+                     args=(self.post.id,)),
+             'posts/post_detail.html'),
+            (reverse('posts:post_create'),
+             'posts/create_post.html'),
+            (reverse('posts:post_edit',
+                     args=(self.post.id,)),
+             'posts/create_post.html'),
+        ]
+        for path, template in expected_template:
+            with self.subTest(address=path):
+                response = self.authorized_user.get(path)
                 self.assertTemplateUsed(response, template)
 
-    def test_URL_for_authorized_user(self):
-        """
-        Проверка URL для авторизованного пользователя
-        data_for_test = {address:(adress_template, redirect_address)}
-        """
-        data_for_test = {
-            '/create/': ('posts/create_post.html',
-                         '/auth/login/?next=/create/')}
-
-        for address, (template, redirect_address) in data_for_test.items():
-            with self.subTest(test_address=address):
-                response_authorized_users = PostsURLTest.authorized_client.get(
-                    address)
-                response_guest_users = PostsURLTest.guest_client.get(
-                    address, follow=True)
-                self.assertEqual(
-                    response_authorized_users.status_code, HTTPStatus.OK)
-                self.assertTemplateUsed(response_authorized_users, template)
-                self.assertRedirects(response_guest_users, redirect_address)
-
-    def test_URL_for_autor_user(self):
-        """
-        Провверка URL для автора
-        data_for_test = {address:(adress_template, redirect_address)}
-        """
-        data_for_test = {f'/posts/{PostsURLTest.post.id}/edit/': (
-            'posts/create_post.html', f'/posts/{PostsURLTest.post.id}/')}
-        for address, (template, redirect_address) in data_for_test.items():
-            with self.subTest(test_address=address):
-                response_author_user = PostsURLTest.author_client.get(address)
-                response_authorized_user = PostsURLTest.authorized_client.get(
-                    address)
-                response_guest_users = PostsURLTest.guest_client.get(address)
-                self.assertEqual(
-                    response_author_user.status_code, HTTPStatus.OK)
-                self.assertTemplateUsed(response_author_user, template)
-                self.assertRedirects(
-                    response_authorized_user, redirect_address)
-                self.assertRedirects(response_guest_users,
-                                     ('/auth/login/?next=' + address))
-
     def test_unexisting_page(self):
-        data_for_test = {'/group/unexisting_page/',
-                         '/profile/unexisting_page/'}
+        """
+        Несуществующая страница вернет ошибку 404
+        """
+        data_for_test = ('/group/unexisting_page/',
+                         '/profile/unexisting_page/')
         for address in data_for_test:
             with self.subTest(test_address=address):
-                response_goust_user = PostsURLTest.guest_client.get(address)
-                response_authorized_user = PostsURLTest.author_client.get(
-                    address)
-                self.assertEqual(
-                    response_goust_user.status_code, HTTPStatus.NOT_FOUND)
-                self.assertEqual(
-                    response_authorized_user.status_code, HTTPStatus.NOT_FOUND)
+                response_goust_user = self.goust_user.get(address)
+                response_authorized_user = self.authorized_user.get(address)
+                self.assertEqual(response_goust_user.status_code,
+                                 HTTPStatus.NOT_FOUND)
+                self.assertEqual(response_authorized_user.status_code,
+                                 HTTPStatus.NOT_FOUND)
