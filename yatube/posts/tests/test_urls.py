@@ -16,12 +16,12 @@ class URLsTest(TestCase):
         self.group = mixer.blend(Group)
         self.post = mixer.blend(Post, author=self.user, group=self.group)
         self.goust_user = Client()
-        self.authorized_user =Client()
+        self.authorized_user = Client()
         self.authorized_user.force_login(self.user)
 
     def test_public_urls(self):
         """
-        Публичные urls 
+        Публичные urls
         (главная, профиль, группа, одиночный пост)
         работают для неавторизованного пользователя
         """
