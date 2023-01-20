@@ -1,7 +1,7 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
-from pytils.translit import slugify
+from django.test import TestCase
 from posts.models import Group, Post
+from pytils.translit import slugify
 
 User = get_user_model()
 
@@ -44,6 +44,7 @@ class GroupModelTest(TestCase):
         """
         __str__ сохраняется с ожидаемым значением
         """
+        self.assertEqual(str(self.group), self.group.title)
 
     def test_field_verbose_name_and_help_text(self):
         """

@@ -1,10 +1,10 @@
+from django.contrib.auth import get_user_model
+from django.core.paginator import Page
 from django.test import TestCase, Client
 from django.urls import reverse
-from django.contrib.auth import get_user_model
+from faker import Faker
 from http import HTTPStatus
 from mixer.backend.django import mixer
-from django.core.paginator import Page
-from faker import Faker
 from posts.forms import PostForm
 from posts.models import Group, Post
 from yatube.settings import POSTS_PER_PAGE

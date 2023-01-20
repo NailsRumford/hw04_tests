@@ -1,9 +1,9 @@
-from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
+from django.test import TestCase, Client
 from django.urls import reverse
-from mixer.backend.django import mixer
 from http import HTTPStatus
-from posts.models import Post, Group
+from mixer.backend.django import mixer
+from posts.models import Group, Post
 
 
 User = get_user_model()

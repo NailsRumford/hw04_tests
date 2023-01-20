@@ -1,8 +1,8 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
-from django.contrib.auth import get_user_model
 from mixer.backend.django import mixer
-from posts.models import Post, Group
+from posts.models import Group, Post
 
 
 User = get_user_model()
@@ -38,18 +38,19 @@ class PostFormTest (TestCase):
             'group': self.group.id,
         }
         response = self.authorized_user.post(path, data=form_data, follow=True)
+        first_post_per_page = Post.objects.first()
         self.assertEqual(Post.objects.count(),
                          post_count + 1,
                          "Пост не создался")
         self.assertRedirects(response,
                              expected_redirect_path)
-        self.assertEqual(Post.objects.first().text,
+        self.assertEqual(first_post_per_page.text,
                          form_data['text'],
                          "Текст поста не соответствует ожидаемому")
-        self.assertEqual(Post.objects.first().group.id,
+        self.assertEqual(first_post_per_page.group.id,
                          form_data['group'],
                          "Группа поста не соответствует ожидаемой")
-        self.assertEqual(Post.objects.first().author, self.user,
+        self.assertEqual(first_post_per_page.author, self.user,
                          "Автор поста не соответствует ожидаемому")
 
     def test_valid_form_edit_post(self):
