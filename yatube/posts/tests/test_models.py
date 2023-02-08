@@ -1,13 +1,13 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from pytils.translit import slugify
 
+from posts.tests.setting import BaseTestCase
 from posts.models import Group, Post
 
 User = get_user_model()
 
 
-class GroupModelTest(TestCase):
+class GroupModelTest(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -65,7 +65,7 @@ class GroupModelTest(TestCase):
                                   "не соответствует ожидаемому"))
 
 
-class PostModelTest(TestCase):
+class PostModelTest(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

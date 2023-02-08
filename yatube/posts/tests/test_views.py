@@ -2,22 +2,22 @@ from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
 from django.core.paginator import Page
-from django.test import Client, TestCase
+from django.test import Client
 from django.urls import reverse
 from faker import Faker
 from mixer.backend.django import mixer
 
 from posts.forms import PostForm
 from posts.models import Group, Post
+from posts.tests.setting import BaseTestCase
 from yatube.settings import POSTS_PER_PAGE
 
 User = get_user_model()
 
-
-class FixtureForTest (TestCase):
+class FixtureForTest (BaseTestCase):
     def setUp(self) -> None:
         self.faker = Faker()
-
+             
     def assertFirstPostMeetsExpectations(self, response, expected_value):
         object_list = self.get_field_from_context(response.context, Page)
         self.assertEqual(object_list[0], expected_value)
@@ -53,7 +53,6 @@ class FixtureForTest (TestCase):
                 return context[field]
         return
 
-
 class IndexViewTest(FixtureForTest):
     @classmethod
     def setUpClass(cls):
@@ -81,7 +80,6 @@ class IndexViewTest(FixtureForTest):
             self.goust_user,
             self.path,
             Post.objects.all().count())
-
 
 class GroupPostsViewTest(FixtureForTest):
     @classmethod
@@ -119,7 +117,6 @@ class GroupPostsViewTest(FixtureForTest):
             Post.objects.
             filter(group=self.group).count())
 
-
 class ProfileViewTest(FixtureForTest):
     @classmethod
     def setUpClass(cls):
@@ -154,7 +151,6 @@ class ProfileViewTest(FixtureForTest):
             self.path,
             Post.objects.filter(author=self.user).count())
 
-
 class PostDetailViewTest(FixtureForTest):
     @classmethod
     def setUpClass(cls):
@@ -176,7 +172,6 @@ class PostDetailViewTest(FixtureForTest):
     def test_post_detail_template(self):
         response = self.goust_user.get(self.path)
         self.assertTemplateUsed(response, self.template)
-
 
 class CreatePostViewTest(FixtureForTest):
     @classmethod
@@ -211,7 +206,6 @@ class CreatePostViewTest(FixtureForTest):
         for field, value in expected_value.fields.items():
             with self.subTest(field=field):
                 self.assertIsInstance(test_value.fields[field], type(value))
-
 
 class EditPostViewsTest(FixtureForTest):
     @classmethod

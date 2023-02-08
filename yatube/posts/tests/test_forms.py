@@ -1,20 +1,21 @@
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client
 from django.urls import reverse
 from mixer.backend.django import mixer
 
+from posts.tests.setting import BaseTestCase
 from posts.models import Group, Post
+from yatube.settings import BASE_DIR
 
 User = get_user_model()
 
-
-class PostFormTest (TestCase):
+class PostFormTest (BaseTestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.group = mixer.blend(Group)
-
+    
     def setUp(self) -> None:
 
         self.user = mixer.blend(User)
