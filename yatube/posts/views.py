@@ -4,8 +4,8 @@ from core.utils import paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
 
-from .forms import PostForm
-from .models import Group, Post
+from .forms import PostForm, CommentsForm
+from .models import Group, Post, Comment
 
 
 User = get_user_model()
@@ -50,10 +50,13 @@ def profile(request, username):
 def post_detail(request, post_id):
     """ Возвращает страницу поста """
     post = get_object_or_404(Post, pk=post_id)
+    comments = Comment.objects.filter(post = post)
+    comment_form = CommentsForm()
     context = {'post': post,
+               'comments':comments,
+               'comment_form':comment_form,
                }
     return render(request, 'posts/post_detail.html', context)
-
 
 @login_required
 def post_create(request):
@@ -93,3 +96,14 @@ def post_edit(request, post_id):
         'post': post,
     }
     return render(request, template_create, context)
+
+@login_required
+def add_comment(request, post_id):
+    post =Post.objects.get(id=post_id)
+    form = CommentsForm(request.POST or None)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+    return redirect('posts:post_detail', post_id=post_id)
