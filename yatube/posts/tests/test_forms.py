@@ -5,7 +5,7 @@ from mixer.backend.django import mixer
 
 from posts.tests.setting import BaseTestCase
 from posts.models import Group, Post
-from yatube.settings import BASE_DIR
+
 
 User = get_user_model()
 
