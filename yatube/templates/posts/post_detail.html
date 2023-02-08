@@ -33,14 +33,7 @@
       </ul>
     </aside>
     <article class="col-12 col-md-9">
-      <p>
-       {{ post.text|linebreaks }}
-      </p>
-      {% if post.author.username == user.username %}
-        <a class="btn btn-primary" href="{% url 'posts:post_edit' post.id %}">
-          редактировать запись
-        </a>
-      {% endif %}
+     {% include 'includes/post.html' with show_edit=True %}
     </article>
   </div> 
 {% endblock%}

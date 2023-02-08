@@ -59,7 +59,8 @@ def post_detail(request, post_id):
 def post_create(request):
     """ Возвращает форму для добавления новой публикации """
     template = 'posts/create_post.html'
-    form = PostForm(request.POST or None)
+    form = PostForm(request.POST or None,
+                    files=request.FILES or None)
     if form.is_valid():
         post = form.save(commit=False)
         post.author = request.user
@@ -80,7 +81,9 @@ def post_edit(request, post_id):
     page_detail = 'posts:post_detail'
     if post.author != request.user:
         return redirect(page_detail, post_id)
-    form = PostForm(request.POST or None, instance=post)
+    form = PostForm(request.POST or None,
+                    files=request.FILES or None,
+                    instance=post)
     if form.is_valid():
         form.save()
         return redirect(page_detail, post_id)

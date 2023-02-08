@@ -62,8 +62,8 @@ class Post(models.Model):
     image = models.ImageField(
         'Картинка',
         upload_to='posts/',
-        blank =True
-    )
+        blank=True
+    )  
     
     class Meta:
         verbose_name = 'Пост'
