@@ -1,4 +1,3 @@
-import time
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
