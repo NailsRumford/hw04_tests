@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 from mixer.backend.django import mixer
+from django.core.cache import cache
 
 from posts.models import Group, Post
 
@@ -19,6 +20,7 @@ class URLsTest(TestCase):
         self.goust_user = Client()
         self.authorized_user = Client()
         self.authorized_user.force_login(self.user)
+        cache.clear()
 
     def test_public_urls(self):
         """

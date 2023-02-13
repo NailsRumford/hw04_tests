@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from core.utils import paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import cache_page
 
 
 from .forms import PostForm, CommentsForm
@@ -10,7 +11,7 @@ from .models import Group, Post, Comment
 
 User = get_user_model()
 
-
+@cache_page(20,key_prefix='index_page')
 def index(request):
     """ Возвращает главную страницу с десятью последними постами """
     post_list = Post.objects.select_related('author').all()

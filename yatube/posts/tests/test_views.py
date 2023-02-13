@@ -1,3 +1,4 @@
+import time
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
@@ -6,6 +7,7 @@ from django.test import Client
 from django.urls import reverse
 from faker import Faker
 from mixer.backend.django import mixer
+from django.core.cache import cache
 
 from posts.forms import PostForm
 from posts.models import Group, Post
@@ -14,10 +16,18 @@ from yatube.settings import POSTS_PER_PAGE
 
 User = get_user_model()
 
+
 class FixtureForTest (BaseTestCase):
     def setUp(self) -> None:
         self.faker = Faker()
-             
+        
+    def get_first_post_on_page (self, response):
+        result = self.get_field_from_context(response.context, (Page, Post,))
+        if isinstance(result, Page):
+            return result[0]
+        else:
+            return result
+
     def assertFirstPostMeetsExpectations(self, response, expected_value):
         object_list = self.get_field_from_context(response.context, Page)
         self.assertEqual(object_list[0], expected_value)
@@ -53,14 +63,25 @@ class FixtureForTest (BaseTestCase):
                 return context[field]
         return
 
+    def assertImageIsInContext(self, post, user, path):
+        excepted_image = post.image
+        response = user.get(path)
+        test_post = self.get_first_post_on_page(response)
+        test_image = test_post.image
+        self.assertEqual(excepted_image,test_image)        
+
 class IndexViewTest(FixtureForTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.template = 'posts/index.html'
         cls.path = reverse('posts:index')
+        cls.user = mixer.blend(User)
         cls.goust_user = Client()
         mixer.cycle(POSTS_PER_PAGE).blend(Post)
+
+    def setUp(self) -> None:
+        cache.clear()
 
     def test_status_code(self):
         response = self.goust_user.get(self.path)
@@ -70,6 +91,16 @@ class IndexViewTest(FixtureForTest):
         expected_post = mixer.blend(Post)
         response = self.goust_user.get(self.path)
         self.assertFirstPostMeetsExpectations(response, expected_post)
+    
+    def test_image_is_in_context(self):
+        test_post = mixer.blend(Post)
+        self.assertImageIsInContext(test_post, self.goust_user, self.path)
+    
+    def test_index_page_caching(self):
+        response_before_post_delete = self.goust_user.get(self.path)
+        self.get_first_post_on_page(response_before_post_delete).delete()
+        response_after_post_delete = self.goust_user.get(self.path)
+        self.assertEqual(response_after_post_delete.content, response_after_post_delete.content)
 
     def test_index_template(self):
         response = self.goust_user.get(self.path)
@@ -80,6 +111,7 @@ class IndexViewTest(FixtureForTest):
             self.goust_user,
             self.path,
             Post.objects.all().count())
+
 
 class GroupPostsViewTest(FixtureForTest):
     @classmethod
@@ -105,6 +137,10 @@ class GroupPostsViewTest(FixtureForTest):
         expected_post = mixer.blend(Post, group=self.group)
         response = self.goust_user.get(self.path)
         self.assertFirstPostMeetsExpectations(response, expected_post)
+        
+    def test_image_is_in_context(self):
+        test_post = mixer.blend(Post, group = self.group)
+        self.assertImageIsInContext(test_post, self.goust_user, self.path)
 
     def test_group_posts_template(self):
         response = self.goust_user.get(self.path)
@@ -116,6 +152,7 @@ class GroupPostsViewTest(FixtureForTest):
             self.path,
             Post.objects.
             filter(group=self.group).count())
+
 
 class ProfileViewTest(FixtureForTest):
     @classmethod
@@ -140,6 +177,10 @@ class ProfileViewTest(FixtureForTest):
         expected_post = mixer.blend(Post, author=self.user)
         response = self.goust_user.get(self.path)
         self.assertFirstPostMeetsExpectations(response, expected_post)
+        
+    def test_image_is_in_context(self):
+        test_post = mixer.blend(Post, author=self.user)
+        self.assertImageIsInContext(test_post, self.goust_user, self.path)
 
     def test_profile_template(self):
         response = self.goust_user.get(self.path)
@@ -150,6 +191,7 @@ class ProfileViewTest(FixtureForTest):
             self.goust_user,
             self.path,
             Post.objects.filter(author=self.user).count())
+
 
 class PostDetailViewTest(FixtureForTest):
     @classmethod
@@ -168,10 +210,14 @@ class PostDetailViewTest(FixtureForTest):
         response = self.goust_user.get(self.path)
         post_from_context = self.get_field_from_context(response.context, Post)
         self.assertEqual(post_from_context, self.post)
+        
+    def test_image_is_in_context(self):
+        self.assertImageIsInContext(self.post, self.goust_user, self.path)        
 
     def test_post_detail_template(self):
         response = self.goust_user.get(self.path)
         self.assertTemplateUsed(response, self.template)
+
 
 class CreatePostViewTest(FixtureForTest):
     @classmethod
@@ -206,6 +252,7 @@ class CreatePostViewTest(FixtureForTest):
         for field, value in expected_value.fields.items():
             with self.subTest(field=field):
                 self.assertIsInstance(test_value.fields[field], type(value))
+
 
 class EditPostViewsTest(FixtureForTest):
     @classmethod
