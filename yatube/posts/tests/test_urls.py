@@ -7,11 +7,13 @@ from mixer.backend.django import mixer
 from django.core.cache import cache
 
 from posts.models import Group, Post
+from posts.tests.setting import BaseTestCase
+
 
 User = get_user_model()
 
 
-class URLsTest(TestCase):
+class URLsTest(BaseTestCase):
 
     def setUp(self):
         self.user = mixer.blend(User)

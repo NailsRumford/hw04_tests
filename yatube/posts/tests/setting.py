@@ -14,6 +14,7 @@ class BaseTestCase(TestCase):
     def tearDownClass(cls):
         super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+
     
 
 

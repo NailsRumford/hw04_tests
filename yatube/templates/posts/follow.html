@@ -1,11 +1,15 @@
 {% extends 'base.html' %}
 {% block title %}
-  Последние обновления на сайте
+  Посты авторов на которых вы подписаны
 {% endblock %}
 {% block content %}
   {% include 'posts/includes/switcher.html' %}
+  {%if follow_exists %}
     {% for post in page_obj %}     
       {% include 'includes/post.html' with show_link=True  show_author_link=True  show_deteil=True%}
     {% endfor %}
+  {%else%}
+    Вы не на кого не подписаны
+  {% endif %}
   {% include 'posts/includes/paginator.html' %}
 {% endblock %} 

@@ -99,7 +99,10 @@ class IndexViewTest(FixtureForTest):
         response_before_post_delete = self.goust_user.get(self.path)
         self.get_first_post_on_page(response_before_post_delete).delete()
         response_after_post_delete = self.goust_user.get(self.path)
+        cache.clear()
+        response_after_cache_delete = self.goust_user.get(self.path)
         self.assertEqual(response_after_post_delete.content, response_after_post_delete.content)
+        self.assertNotEqual(response_after_post_delete.content, response_after_cache_delete.content)
 
     def test_index_template(self):
         response = self.goust_user.get(self.path)
