@@ -24,18 +24,6 @@ def index(request):
     }
     return render(request, template, context)
 
-@login_required
-def follow_index(request):
-    # информация о текущем пользователе доступна в переменной request.user
-    follow_exists = Follow.objects.filter(user=request.user).exists()
-    authors = Follow.objects.filter(user=request.user).values_list('author', flat=True)
-    post_list = Post.objects.filter(author__in=authors)
-    context = {
-        'page_obj': paginator(post_list, request),
-        'follow': True,
-        'follow_exists':follow_exists
-        }
-    return render(request, 'posts/follow.html', context)
 
 
 def group_posts(request, slug):
@@ -131,6 +119,18 @@ def add_comment(request, post_id):
     return redirect('posts:post_detail', post_id=post_id)
 
 
+@login_required
+def follow_index(request):
+    # информация о текущем пользователе доступна в переменной request.user
+    follow_exists = Follow.objects.filter(user=request.user).exists()
+    authors = Follow.objects.filter(user=request.user).values_list('author', flat=True)
+    post_list = Post.objects.filter(author__in=authors)
+    context = {
+        'page_obj': paginator(post_list, request),
+        'follow': True,
+        'follow_exists':follow_exists
+        }
+    return render(request, 'posts/follow.html', context)
 
 
 @login_required

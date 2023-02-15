@@ -9,7 +9,7 @@ from mixer.backend.django import mixer
 from django.core.cache import cache
 
 from posts.forms import PostForm
-from posts.models import Group, Post
+from posts.models import Group, Post, Follow
 from posts.tests.setting import BaseTestCase
 from yatube.settings import POSTS_PER_PAGE
 
@@ -19,13 +19,17 @@ User = get_user_model()
 class FixtureForTest (BaseTestCase):
     def setUp(self) -> None:
         self.faker = Faker()
+        cache.clear()
         
-    def get_first_post_on_page (self, response):
-        result = self.get_field_from_context(response.context, (Page, Post,))
-        if isinstance(result, Page):
-            return result[0]
+    def get_first_post_on_page(self, response):
+        page = self.get_field_from_context(response.context, Page)
+        post = self.get_field_from_context(response.context, Post)
+        if isinstance(page, Page):
+            return page[0]
+        elif isinstance(post, Post):
+            return post
         else:
-            return result
+            return None
 
     def assertFirstPostMeetsExpectations(self, response, expected_value):
         object_list = self.get_field_from_context(response.context, Page)
@@ -64,10 +68,12 @@ class FixtureForTest (BaseTestCase):
 
     def assertImageIsInContext(self, post, user, path):
         excepted_image = post.image
+        cache.clear()
         response = user.get(path)
         test_post = self.get_first_post_on_page(response)
         test_image = test_post.image
-        self.assertEqual(excepted_image,test_image)        
+        self.assertEqual(excepted_image, test_image)
+
 
 class IndexViewTest(FixtureForTest):
     @classmethod
@@ -79,8 +85,6 @@ class IndexViewTest(FixtureForTest):
         cls.goust_user = Client()
         mixer.cycle(POSTS_PER_PAGE).blend(Post)
 
-    def setUp(self) -> None:
-        cache.clear()
 
     def test_status_code(self):
         response = self.goust_user.get(self.path)
@@ -90,19 +94,21 @@ class IndexViewTest(FixtureForTest):
         expected_post = mixer.blend(Post)
         response = self.goust_user.get(self.path)
         self.assertFirstPostMeetsExpectations(response, expected_post)
-    
+
     def test_image_is_in_context(self):
         test_post = mixer.blend(Post)
         self.assertImageIsInContext(test_post, self.goust_user, self.path)
-    
+
     def test_index_page_caching(self):
         response_before_post_delete = self.goust_user.get(self.path)
         self.get_first_post_on_page(response_before_post_delete).delete()
         response_after_post_delete = self.goust_user.get(self.path)
         cache.clear()
         response_after_cache_delete = self.goust_user.get(self.path)
-        self.assertEqual(response_after_post_delete.content, response_after_post_delete.content)
-        self.assertNotEqual(response_after_post_delete.content, response_after_cache_delete.content)
+        self.assertEqual(response_after_post_delete.content,
+                         response_after_post_delete.content)
+        self.assertNotEqual(response_after_post_delete.content,
+                            response_after_cache_delete.content)
 
     def test_index_template(self):
         response = self.goust_user.get(self.path)
@@ -139,9 +145,9 @@ class GroupPostsViewTest(FixtureForTest):
         expected_post = mixer.blend(Post, group=self.group)
         response = self.goust_user.get(self.path)
         self.assertFirstPostMeetsExpectations(response, expected_post)
-        
+
     def test_image_is_in_context(self):
-        test_post = mixer.blend(Post, group = self.group)
+        test_post = mixer.blend(Post, group=self.group)
         self.assertImageIsInContext(test_post, self.goust_user, self.path)
 
     def test_group_posts_template(self):
@@ -179,7 +185,7 @@ class ProfileViewTest(FixtureForTest):
         expected_post = mixer.blend(Post, author=self.user)
         response = self.goust_user.get(self.path)
         self.assertFirstPostMeetsExpectations(response, expected_post)
-        
+
     def test_image_is_in_context(self):
         test_post = mixer.blend(Post, author=self.user)
         self.assertImageIsInContext(test_post, self.goust_user, self.path)
@@ -212,9 +218,9 @@ class PostDetailViewTest(FixtureForTest):
         response = self.goust_user.get(self.path)
         post_from_context = self.get_field_from_context(response.context, Post)
         self.assertEqual(post_from_context, self.post)
-        
+
     def test_image_is_in_context(self):
-        self.assertImageIsInContext(self.post, self.goust_user, self.path)        
+        self.assertImageIsInContext(self.post, self.goust_user, self.path)
 
     def test_post_detail_template(self):
         response = self.goust_user.get(self.path)
@@ -286,3 +292,66 @@ class EditPostViewsTest(FixtureForTest):
     def test_is_edit_in_context(self):
         response = self.author_client.get(self.path)
         self.assertEqual(response.context['is_edit'], True)
+
+
+class ProfileFollowTest(FixtureForTest):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.user = mixer.blend(User)
+        cls.authorized_user = Client()
+        cls.authorized_user.force_login(cls.user)
+        cls.goust_user = Client()
+        cls.author = mixer.blend(User)
+        cls.author_post = mixer.blend(Post, author=cls.author)
+        cls.path_follow = reverse('posts:profile_follow', args=(cls.author.username,))
+        cls.path_unfollow = reverse('posts:profile_unfollow', args=(cls.author.username,))
+
+    def test_authorized_user_can_subscribe(self):
+        follow_count = Follow.objects.count()
+        self.authorized_user.get(self.path_follow)
+        self.assertEqual(Follow.objects.count(),
+                         follow_count + 1)
+    
+    def test_authorized_user_can_unsubscribe(self):
+        self.authorized_user.get(self.path_follow)
+        follow_count = Follow.objects.count()
+        self.authorized_user.get(self.path_unfollow)
+        self.assertEqual(Follow.objects.count(),
+                         follow_count-1)
+        
+            
+    def goust_user_cannot_subscribe(self):
+        follow_count = Follow.objects.count()
+        response = self.goust_user.get(self.path)
+        self.assertEqual(Follow.objects.count(),
+                         follow_count)
+ 
+class FollowIndexTest(FixtureForTest):
+    @classmethod
+    def setUpClass(cls):
+        cls.user = mixer.blend(User)
+        cls.authorized_user= Client()
+        cls.authorized_user.force_login(cls.user)
+        cls.follow_author = mixer.blend(User)
+        cls.another_author = mixer.blend(User)
+        cls.path = reverse('posts:follow_index')
+        follow = Follow(user= cls.user,
+                        author = cls.follow_author)
+        follow.save
+        
+        
+    def new_post_appears_to_subscribed_users(self):
+        exepted_post = mixer.blend(Post,
+                                   author=self.follow_author)
+        response = self.authorized_user.get(self.path)
+        test_post = self.get_first_post_on_page(response)
+        self.assertEqual(exepted_post,test_post)
+    
+    def new_post_does_not_appear_to_non_subscribed_users(self):
+        exepted_post = mixer.blend(Post,
+                                   author = self.another_author)
+        response = self.authorized_user.get(self.path)
+        test_post =self.get_first_post_on_page(response)
+        self.assertNotEqual(exepted_post, test_post)
+                  

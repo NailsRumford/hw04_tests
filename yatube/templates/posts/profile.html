@@ -8,7 +8,7 @@
   {% include 'posts/includes/subscription_button.html'%}
 </div>
 {% for post in page_obj %}
-  {% include 'includes/post.html' with show_link=True show_deteil=True%}   
+  {% include 'posts/includes/post.html' with show_link=True show_deteil=True%}   
 {% endfor%}
 {% include 'posts/includes/paginator.html' %}
 {% endblock %}
